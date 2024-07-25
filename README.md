@@ -21,11 +21,11 @@ This project is a Preact application configured with Webpack. It includes setup 
 
 1. Clone the repository:
     ```bash
-    git clone https://github.com/your-username/preact-webpack-app.git
+    git clone https://github.com/jameswquinn/complex-webpack-preact.git
     ```
 2. Navigate to the project directory:
     ```bash
-    cd preact-webpack-app
+    cd complex-webpack-preact
     ```
 3. Install the dependencies:
     ```bash
