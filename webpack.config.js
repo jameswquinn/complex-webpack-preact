@@ -39,11 +39,8 @@ module.exports = (env, argv) => {
           use: {
             loader: 'babel-loader',
             options: {
-              presets: [
-                '@babel/preset-env',
-                '@babel/preset-react',
-                '@babel/preset-typescript',
-              ],
+              presets: ['@babel/preset-env'],
+              plugins: [['@babel/plugin-transform-react-jsx', { pragma: 'h' }]],
             },
           },
         },
@@ -82,6 +79,13 @@ module.exports = (env, argv) => {
           ],
         },
       ],
+    },
+    resolve: {
+      alias: {
+        react: 'preact/compat',
+        'react-dom': 'preact/compat',
+      },
+      extensions: ['.js', '.jsx'],
     },
     plugins: [
       new Dotenv(),
