@@ -4,7 +4,7 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const Dotenv = require('dotenv-webpack');
 const { GenerateSW } = require('workbox-webpack-plugin');
 const ImageminWebpackPlugin = require('imagemin-webpack-plugin').default;
-const WebpWebpackPlugin = require('webp-webpack-plugin');
+const ResponsiveLoader = require('responsive-loader');
 const FaviconsWebpackPlugin = require('favicons-webpack-plugin');
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
@@ -14,7 +14,9 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const rimraf = require('rimraf');
 
-const pathsToPurge = glob.sync(path.resolve(__dirname, 'src/**/*.{js,jsx,ts,tsx,css,html}'));
+const pathsToPurge = glob.sync(
+  path.resolve(__dirname, 'src/**/*.{js,jsx,ts,tsx,css,html}')
+);
 
 module.exports = (env, argv) => {
   const isProduction = argv.mode === 'production';
@@ -37,7 +39,11 @@ module.exports = (env, argv) => {
           use: {
             loader: 'babel-loader',
             options: {
-              presets: ['@babel/preset-env', '@babel/preset-react', '@babel/preset-typescript'],
+              presets: [
+                '@babel/preset-env',
+                '@babel/preset-react',
+                '@babel/preset-typescript',
+              ],
             },
           },
         },
@@ -51,15 +57,29 @@ module.exports = (env, argv) => {
         },
         {
           test: /\.(jpe?g|png|gif|svg)$/i,
-          type: 'asset',
-          parser: {
-            dataUrlCondition: {
-              maxSize: 4 * 1024, // 4kb
+          use: [
+            {
+              loader: 'responsive-loader',
+              options: {
+                adapter: require('responsive-loader/sharp'),
+                sizes: [320, 640, 960, 1280],
+                name: 'images/[name].[hash].[ext]',
+              },
             },
-          },
-          generator: {
-            filename: 'images/[hash][ext][query]',
-          },
+            {
+              loader: 'imagemin-webpack-plugin',
+              options: {
+                test: /\.(jpe?g|png|gif|svg)$/i,
+                pngquant: {
+                  quality: '65-90',
+                  speed: 4,
+                },
+                jpegtran: {
+                  progressive: true,
+                },
+              },
+            },
+          ],
         },
       ],
     },
@@ -71,34 +91,18 @@ module.exports = (env, argv) => {
       new GenerateSW({
         clientsClaim: true,
         skipWaiting: true,
-        runtimeCaching: [{
-          urlPattern: ({ request }) => request.mode === 'navigate',
-          handler: 'NetworkFirst',
-          options: {
-            cacheName: 'pages',
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.mode === 'navigate',
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'pages',
+            },
           },
-        }],
-      }),
-      new ImageminWebpackPlugin({
-        test: /\.(jpe?g|png|gif|svg)$/i,
-        pngquant: {
-          quality: '65-90',
-          speed: 4,
-        },
-        jpegtran: {
-          progressive: true,
-        },
-      }),
-      new WebpWebpackPlugin({
-        test: /\.(jpe?g|png)$/,
-        log: true,
-        detailedLog: true,
-        quality: 75,
-        preset: 'default',
-        method: 6,
+        ],
       }),
       new FaviconsWebpackPlugin({
-        logo: path.resolve(__dirname, 'public/favicon.png'),
+        logo: path.resolve(__dirname, 'public', 'favicon.png'),
         prefix: 'icons/',
         emitStats: false,
         statsFilename: 'iconstats.json',
@@ -125,11 +129,12 @@ module.exports = (env, argv) => {
       new ForkTsCheckerWebpackPlugin({
         async: false,
       }),
-      isProduction && new CompressionPlugin({
-        test: /\.(js|css|html|svg)$/,
-        threshold: 8192,
-        minRatio: 0.8,
-      }),
+      isProduction &&
+        new CompressionPlugin({
+          test: /\.(js|css|html|svg)$/,
+          threshold: 8192,
+          minRatio: 0.8,
+        }),
       isProduction && new BundleAnalyzerPlugin(),
     ].filter(Boolean),
     resolve: {
@@ -137,15 +142,22 @@ module.exports = (env, argv) => {
     },
     devtool: isProduction ? 'source-map' : 'cheap-module-source-map',
     devServer: {
-      static: path.resolve(__dirname, 'public'),
-      compress: true,
-      port: 3000,
+      static: {
+        directory: path.join(__dirname, 'public'),
+      },
+      port: 9000,
+      open: true,
       host: '0.0.0.0',
+      allowedHosts: 'all',
       hot: true,
       historyApiFallback: true,
-      allowedHosts: 'all',
-      overlay: true,
-      open: true,
+      compress: true,
+      client: {
+        webSocketURL: 'auto://0.0.0.0:0/ws',
+      },
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+      },
     },
     optimization: {
       minimize: isProduction,
@@ -182,7 +194,7 @@ module.exports = (env, argv) => {
         },
       },
       runtimeChunk: {
-        name: entrypoint => `runtime-${entrypoint.name}`,
+        name: (entrypoint) => `runtime-${entrypoint.name}`,
       },
     },
   };
