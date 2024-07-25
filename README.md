@@ -3,29 +3,6 @@
 This project is a Preact application configured with Webpack. It includes setup for CSS handling, image optimization, PWA support, and other modern web development features.
 
 
-preact-webpack-app/
-│
-├── dist/
-│   └── (output files here)
-│
-├── public/
-│   ├── favicon.png
-│   └── index.html
-│
-├── src/
-│   ├── index.js
-│   ├── App.js
-│   └── (other source files)
-│
-├── .babelrc
-├── .env
-├── .eslintrc.json
-├── .prettierrc
-├── package.json
-├── README.md
-├── webpack.config.js
-└── (other configuration files)
-
 
 ## Features
 
